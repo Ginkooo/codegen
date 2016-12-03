@@ -66,7 +66,7 @@ var CodeGenerator = (function () {
         return ret;
     };
     CodeGenerator.prototype.handleProg = function (node) {
-        var code = '#include <iostream>\n#include <math.h>\n\nusing namespace std;\n\n';
+        var code = '#include <iostream>\n#include <math.h>\n#include <stdbool.h>\n\nusing namespace std;\n\n';
         code += "int main(int argc, char[] argv)\n";
         code += "{\n";
         this.indent++;
@@ -148,8 +148,21 @@ function main() {
     "node": "call",\
     "func": { "node": "var", "value": "foo" },\
     "args": [\
-      { "node": "var", "value": "a" },\
-      { "node": "num", "value": 1 }\
+      { "node": "binary",\
+  "operator": "+",\
+  "left": { "node": "var", "value": "x" },\
+  "right": {\
+    "node": "binary",\
+    "operator": "*",\
+    "left": { "node": "var", "value": "y" },\
+    "right": { "node": "var", "value": "z" } } },\
+      { "node": "num", "value": 1 },\
+      {\
+  "node": "assign",\
+  "operator": "=",\
+  "left": { "node": "var", "value": "a", "type" : "bool" },\
+  "right": { "node": "chr", "value": "sdf" }\
+}\
     ]\
   }\
   ]\
