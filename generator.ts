@@ -1,14 +1,14 @@
-
-
+//This interface is giving possibility to add a generateCode method to Object class
 interface Object
 {
   generateCode(self : CodeGenerator);
 }
 
-
+//There is all code generating logic in this class
 class CodeGenerator
 {
     ast;
+	astStr : string;
     indent = 0;
     putSemicolon : boolean = true;
 
@@ -18,12 +18,22 @@ class CodeGenerator
     {
         this.ast = this.json_str_to_obj(ast);
         this.self = this;
+		this.astStr = ast;
     }
+	public getAstStr()
+	{
+		return this.astStr;
+	}
 
     private semicolon()
     {
-      return (this.putSemicolon ? ";\n" : "");
+      return (this.putSemicolon ? ";\n" : "\n");
     }
+	
+	private getIncludes()
+	{
+		return "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n\n";
+	}
 
     private handleAssign(node)
     {
@@ -62,12 +72,15 @@ class CodeGenerator
     private handleIf(node)
     {
       var statement : string = "if (" + node.cond.generateCode(this) + ")\n";
-      var then : string = this.han
+      var then : string = this.handleIndent() + "then\n" + node.then.generateCode(this) + "\n";
+	  var _else : string = this.handleIndent() + "else\n" + node.else.generateCode(this);
+	  this.putSemicolon = false;
+	  return statement + then + _else;
     }
 
     private handleCall(node)
     {
-      return node.func.generateCode(this) + "(" + this.listArgs(node.args) + ")";
+      return node.name.generateCode(this) + "(" + this.listArgs(node.args) + ")";
     }
 
     private listArgs(args)
@@ -88,8 +101,33 @@ class CodeGenerator
 
     private handleError(node)
     {
+		this.putSemicolon = false;
       return "Cannot resolve node " + node.node;
     }
+	
+	private handleWhile(node)
+	{
+		var statement : string = "while(" + node.cond.generateCode(this) + ")\n";
+		var body : string = node.body.generateCode(this);
+		this.putSemicolon = false;
+		return statement + body;	
+	}
+	
+	private handleFor(node)
+	{
+		var statement : string = "for(" + node.init.generateCode(this) + "; " + node.cond.generateCode(this) + "; " + node.after.generateCode(this) + ")\n";
+		var body : string = node.body.generateCode(this);
+		this.putSemicolon = false;
+		return statement + body;
+	}
+	
+	private handleDoWhile(node)
+	{
+		var beginning : string = "do\n"
+		var body : string = node.body.generateCode(this);
+		var ending : string = "while(" + node.cond.generateCode(this) + ")";
+		return beginning + body + ending;
+	}
 
     private handleChr(node)
     {
@@ -118,23 +156,32 @@ class CodeGenerator
     private handleFunc(node)
     {
       var ret : string = "";
-      ret += node.name.type + " " + node.name.value + "(" + this.listArgs(node.args) + ")\n";
+      ret += node.type + " " + node.name + "(" + this.listArgs(node.args) + ")\n";
       ret += node.body.generateCode(this);
-      return ret;
+	  this.putSemicolon = false;
+      return ret + "\n\n";
     }
+	
+	private handleStruct(node)
+	{
+		var beginning : string = "struct " + node.name;
+		var body = node.body.generateCode(this);
+		return beginning + body + "\n\n";
+	}
 
     private handleProg(node)
     {
       var code : string = "";
-      this.indent++;
       code += this.handleIndent() + "{\n";
+	  this.indent++;
+	  this.putSemicolon = true;
       for (var i = 0; i < node.prog.length; i++)
       {
 
         code += this.handleIndent() + node.prog[i].generateCode(this) + this.semicolon();
       }
-      code += this.handleIndent() + "\n}";
-      this.indent = 0;
+	  this.indent--;
+      code += this.handleIndent() + "}";
       return code;
     }
 
@@ -150,6 +197,61 @@ class CodeGenerator
         return this.ast;
     }
 
+	/*
+	*Available nodes:
+	*func:
+		name : string
+		type : type
+		body : prog
+	*struct:
+		name : string
+		body : prog
+	*while:
+		body : prog
+		cond : any
+	*for:
+		init : any
+		cond : any
+		after : any
+		body : prog
+	*dowhile:
+		body : prog
+		cond : any
+	*if:
+		cond : any
+		then : any
+		else : any
+	*chr:
+		type : char or char[]
+		value : one or more character
+	*assign:
+		operator : =
+		left : any
+		right : any
+	*binary:
+		operator : + - * / %
+		left : any
+		right : any
+	*var:
+		name : string
+		type : type
+		value : any
+	*num:
+		value : number
+	*bool:
+		name : string
+		value : boolean
+	*prog:
+		prog : any[]
+	*call:
+		name : string
+		args : any[]
+	*
+	*
+	*
+	* type - int, int[], char, char[] etc.
+	*/
+	
     public generate()
     {
       Object.prototype.generateCode = function(self : CodeGenerator)
@@ -159,6 +261,11 @@ class CodeGenerator
         switch(this.node)
         {
           case "func" : ret = self.handleFunc(this); break;
+		  case "struct" : ret = self.handleStruct(this); break;
+		  case "while" : ret = self.handleWhile(this); break;
+		  case "for" : ret = self.handleFor(this); break;
+		  case "dowhile" : ret = self.handleDoWhile(this); break;
+		  case "if" : ret = self.handleIf(this); break;
           case "chr" : ret = self.handleChr(this); break;
           case "assign": ret = self.handleAssign(this); break;
           case "binary": ret = self.handleBinary(this); break;
@@ -171,8 +278,9 @@ class CodeGenerator
         }        
         return ret;
       }
-
-      var code = this.ast.generateCode(this);
+	  
+	  var code = this.getIncludes();
+      code += this.ast.generateCode(this);
       return code;
     }
 }
@@ -180,54 +288,30 @@ class CodeGenerator
 function main()
 {
     var code_gen = new CodeGenerator('{\
+	"node" : "func",\
+	"name" : "main",\
+	"type" : "int",\
+	"args" : [{"node": "var", "value" : "a", "type" : "int"}],\
+	"body" : {\
   "node": "prog",\
   "prog": [\
-    {\
-      "node": "assign",\
-      "operator": "=",\
-      "left": { "node": "var", "value": "a" },\
-      "right": { "node": "num", "value": 5 }\
-    },\
-    {\
-      "node": "assign",\
-      "operator": "=",\
-      "left": { "node": "var", "value": "b" },\
-      "right": {\
-        "node": "binary",\
-        "operator": "*",\
-        "left": { "node": "var", "value": "a" },\
-        "right": { "node": "num", "value": 2 }\
-      }\
-    },\
-    {\
-      "node": "binary",\
-      "operator": "+",\
-      "left": { "node": "var", "value": "a" },\
-      "right": { "node": "var", "value": "b" }\
-    },\
-  {\
-    "node": "call",\
-    "func": { "node": "var", "value": "foo" },\
-    "args": [\
-      { "node": "binary",\
-  "operator": "+",\
-  "left": { "node": "var", "value": "x" },\
-  "right": {\
-    "node": "binary",\
-    "operator": "*",\
-    "left": { "node": "var", "value": "y" },\
-    "right": { "node": "var", "value": "z" } } },\
-      { "node": "num", "value": 1 },\
-      {\
-  "node": "assign",\
-  "operator": "=",\
-  "left": { "node": "var", "value": "a", "type" : "bool" },\
-  "right": { "node": "chr", "value": "sdf" }\
-}\
-    ]\
-  }\
+  {"node" : "while", "cond" : {"node" : "var", "value" : "a"}, "body" : {\
+  "node" : "prog",\
+  "prog" : [\
+  {"node" : "while", "cond" : {"node" : "var", "value" : "a"}, "body" : {\
+  "node" : "prog",\
+  "prog" : [\
+  {"node" : "var", "value" : "a"},\
+	  {"node" : "if", "cond" : {"node" : "bool", "value" : "true"}, "then" : {"node" : "var", "value" : "a"}, "else" : {"node" : "prog", "prog" : [\
+		  {"node" : "var", "value" : "ssd"}\
+	  ]}\
+	  }\
+\
+  ]}}\
+    ]}}\
   ]\
-}');
+  }\
+	}');
 
 var code = code_gen.generate();
 console.log(code);
