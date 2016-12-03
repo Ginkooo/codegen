@@ -61,7 +61,8 @@ class CodeGenerator
 
     private handleIf(node)
     {
-      var statement = "if (" + node.cond.generateCode(this) + ")\n";
+      var statement : string = "if (" + node.cond.generateCode(this) + ")\n";
+      var then : string = this.han
     }
 
     private handleCall(node)
@@ -114,21 +115,26 @@ class CodeGenerator
       return ret;
     }
 
+    private handleFunc(node)
+    {
+      var ret : string = "";
+      ret += node.name.type + " " + node.name.value + "(" + this.listArgs(node.args) + ")\n";
+      ret += node.body.generateCode(this);
+      return ret;
+    }
+
     private handleProg(node)
     {
-      var code : string = '#include <iostream>\n#include <math.h>\n#include <stdbool.h>\n\nusing namespace std;\n\n';
-      code += "int main(int argc, char[] argv)\n";
-      code += "{\n";
+      var code : string = "";
       this.indent++;
+      code += this.handleIndent() + "{\n";
       for (var i = 0; i < node.prog.length; i++)
       {
 
         code += this.handleIndent() + node.prog[i].generateCode(this) + this.semicolon();
       }
-      
+      code += this.handleIndent() + "\n}";
       this.indent = 0;
-      code += "\n}";
-
       return code;
     }
 
@@ -152,6 +158,7 @@ class CodeGenerator
 
         switch(this.node)
         {
+          case "func" : ret = self.handleFunc(this); break;
           case "chr" : ret = self.handleChr(this); break;
           case "assign": ret = self.handleAssign(this); break;
           case "binary": ret = self.handleBinary(this); break;
