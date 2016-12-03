@@ -73,8 +73,8 @@ class CodeGenerator
     private handleIf(node)
     {
       var statement : string = "if (" + node.cond.generateCode(this) + ")\n";
-      var then : string = node.then.generateCode();
-	  var _else : string = "\n" + node.else.generateCode();
+      var then : string = this.handleIndent() + "then\n" + node.then.generateCode(this) + "\n";
+	  var _else : string = this.handleIndent() + "else\n" + node.else.generateCode(this);
 	  this.putSemicolon = false;
 	  return statement + then + _else;
     }
@@ -160,14 +160,14 @@ class CodeGenerator
       ret += node.type + " " + node.name + "(" + this.listArgs(node.args) + ")\n";
       ret += node.body.generateCode(this);
 	  this.putSemicolon = false;
-      return ret;
+      return ret + "\n\n";
     }
 	
 	private handleStruct(node)
 	{
 		var beginning : string = "struct " + node.name;
-		var body = node.body.generateCode();
-		return beginning + body;
+		var body = node.body.generateCode(this);
+		return beginning + body + "\n\n";
 	}
 
     private handleProg(node)
@@ -207,7 +207,7 @@ class CodeGenerator
         switch(this.node)
         {
           case "func" : ret = self.handleFunc(this); break;
-		  case: "struct" : ret = self.handleStruct(this); break;
+		  case "struct" : ret = self.handleStruct(this); break;
 		  case "while" : ret = self.handleWhile(this); break;
 		  case "for" : ret = self.handleFor(this); break;
 		  case "dowhile" : ret = self.handleDoWhile(this); break;
@@ -247,7 +247,11 @@ function main()
   {"node" : "while", "cond" : {"node" : "var", "value" : "a"}, "body" : {\
   "node" : "prog",\
   "prog" : [\
-  {"node" : "var", "value" : "a"}\
+  {"node" : "var", "value" : "a"},\
+	  {"node" : "if", "cond" : {"node" : "bool", "value" : "true"}, "then" : {"node" : "var", "value" : "a"}, "else" : {"node" : "prog", "prog" : [\
+		  {"node" : "var", "value" : "ssd"}\
+	  ]}\
+	  }\
 \
   ]}}\
     ]}}\
