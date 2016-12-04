@@ -72,8 +72,8 @@ class CodeGenerator
     private handleIf(node)
     {
       var statement : string = "if (" + node.cond.generateCode(this) + ")\n";
-      var then : string = this.handleIndent() + "then\n" + node.then.generateCode(this) + "\n";
-	  var _else : string = this.handleIndent() + "else\n" + node.else.generateCode(this);
+      var then : string = this.handleIndent() + "then\n" + this.handleOneLineBody(node.then);
+	  var _else : string = this.handleIndent() + "else\n" + this.handleOneLineBody(node.else);
 	  this.putSemicolon = false;
 	  return statement + then + _else;
     }
@@ -124,7 +124,7 @@ class CodeGenerator
 	private handleDoWhile(node)
 	{
 		var beginning : string = "do\n"
-		var body : string = node.body.generateCode(this);
+		var body : string = this.handleOneLineBody(node.body);
 		var ending : string = "while(" + node.cond.generateCode(this) + ")";
 		return beginning + body + ending;
 	}
@@ -161,6 +161,21 @@ class CodeGenerator
 	  this.putSemicolon = false;
       return ret + "\n\n";
     }
+	
+	private handleOneLineBody(node)
+	{
+		if (node.prog == null)
+		{
+			this.indent++;
+			var ret : string = this.handleIndent() + node.generateCode(this) + this.semicolon();
+			this.indent--;
+			return ret;
+		}
+		else
+		{
+			return node.generateCode(this);
+		}
+	}
 	
 	private handleStruct(node)
 	{
