@@ -12,6 +12,7 @@ class CodeGenerator
     indent = 0;
     putSemicolon : boolean = true;
     putNewLine : boolean = true;
+    isStructBodyDisplayed : boolean = false;
 
     self : CodeGenerator;
 
@@ -196,8 +197,11 @@ class CodeGenerator
 	
 	private handleStruct(node)
 	{
-		var beginning : string = "struct " + node.name;
+		var beginning : string = "struct " + node.name + "\n";
+    this.putSemicolon = false;
+    this.isStructBodyDisplayed = true;
 		var body = node.body.generateCode(this);
+    this.isStructBodyDisplayed = false;
 		return beginning + body + "\n\n";
 	}
 
@@ -206,16 +210,21 @@ class CodeGenerator
       var code : string = "";
       code += this.handleIndent() + "{\n";
       this.indent++;
-      this.putSemicolon = true;
       for (var i = 0; i < node.prog.length; i++)
       {    
         this.putSemicolon = true;
+        this.putNewLine = true;
         code += this.handleIndent() + node.prog[i].generateCode(this);
         code += this.semicolon();
       }
 	    this.indent--;
-      code +=this.handleIndent() + "}" + this.newLine();
+      code +=this.handleIndent() + "}" + this.putSemicolonAfterStruct() + this.newLine();
       return code;
+    }
+
+    private putSemicolonAfterStruct()
+    {
+      return this.isStructBodyDisplayed ? ";" : "";
     }
 
 
@@ -327,7 +336,7 @@ class CodeGenerator
 
 function main()
 {
-    var code_gen = new CodeGenerator('[{\
+    var code_gen = new CodeGenerator('[{"node":"struct","name":"myStruct","body":{"node":"prog","prog" : {}}},{\
 	"node" : "func",\
 	"name" : "main",\
 	"type" : "int",\
