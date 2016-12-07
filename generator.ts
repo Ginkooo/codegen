@@ -170,6 +170,14 @@ class CodeGenerator
 	    this.putSemicolon = false;
       return ret + "\n\n";
     }
+
+    private handleReturn(node)
+    {
+      if (node.value != null)
+        return "return " + node.value.generateCode(this);
+      else
+        return "return";
+    }
 	
 	private handleBody(node)
 	{
@@ -271,9 +279,9 @@ class CodeGenerator
 	*call:
 	*	name : string
 	*	args : any[]
-	*
-	*
-	*
+	*return
+	* value : any or none, if void function
+  *
 	* type - int, int[], char, char[] etc.
 	*/
 	
@@ -302,20 +310,52 @@ class CodeGenerator
           case "bool": ret = self.handleVarOrNumOrBool(this); break;
           case "prog": ret = self.handleProg(this); break;
           case "call": ret = self.handleCall(this); break;
+          case "return": ret = self.handleReturn(this); break;
           default: self.handleError(this);
         }        
         return ret;
       }
 	  
 	    var code = this.getIncludes();
-      code += this.ast.generateCode(this);
+      this.ast.forEach(ast => {
+        code += ast.generateCode(this)
+      });
+
       return code;
     }
 }
 
 function main()
 {
-    var code_gen = new CodeGenerator('{\
+    var code_gen = new CodeGenerator('[{\
+	"node" : "func",\
+	"name" : "main",\
+	"type" : "int",\
+	"args" : [{"node": "var", "value" : "a", "type" : "int"}],\
+	"body" : {\
+  "node": "prog",\
+  "prog": [\
+  {"node" : "while", "cond" : {"node" : "var", "value" : "a"}, "body" : {\
+  "node" : "prog",\
+  "prog" : [\
+  {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}},\
+  {"node" : "dowhile", "cond" : {}, "body" : {"node" : "var", "value": "x"}},\
+  {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}},\
+  {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}}},\
+  {"node" : "while", "cond" : {"node" : "var", "value" : "a"}, "body" : {\
+  "node" : "prog",\
+  "prog" : [\
+  {"node" : "var", "value" : "a"},\
+	  {"node" : "if", "cond" : {"node" : "bool", "value" : "true"}, "then" : {"node" : "var", "value" : "a"}, "otherwise" : {"node" : "prog", "prog" : [\
+		  {"node" : "var", "value" : "ssd"}\
+	  ]}\
+	  }\
+\
+  ]}}\
+    ]}},{"node":"return", "value" : {}}\
+  ]\
+  }\
+	},{\
 	"node" : "func",\
 	"name" : "main",\
 	"type" : "int",\
@@ -343,7 +383,7 @@ function main()
     ]}}\
   ]\
   }\
-	}');
+	}]');
 
 var code = code_gen.generate();
 console.log(code);
