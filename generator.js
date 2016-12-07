@@ -3,6 +3,7 @@ var CodeGenerator = (function () {
     function CodeGenerator(ast) {
         this.indent = 0;
         this.putSemicolon = true;
+        this.putNewLine = true;
         this.ast = this.json_str_to_obj(ast);
         this.self = this;
         this.astStr = ast;
@@ -10,8 +11,11 @@ var CodeGenerator = (function () {
     CodeGenerator.prototype.getAstStr = function () {
         return this.astStr;
     };
+    CodeGenerator.prototype.newLine = function () {
+        return (this.putNewLine ? "\n" : "");
+    };
     CodeGenerator.prototype.semicolon = function () {
-        return (this.putSemicolon ? ";\n" : "\n");
+        return (this.putSemicolon ? ";\n" : "");
     };
     CodeGenerator.prototype.getIncludes = function () {
         return "#include <stdio.h>\n#include <stdlib.h>\n#include <math.h>\n\n";
@@ -22,7 +26,7 @@ var CodeGenerator = (function () {
     CodeGenerator.prototype.handleBinary = function (node) {
         return node.left.generateCode(this) + " " + node.operator + " " + node.right.generateCode(this);
     };
-    CodeGenerator.prototype.handleVariableOrNumOrBool = function (node) {
+    CodeGenerator.prototype.handleVarOrNumOrBool = function (node) {
         if (node.type != null) {
             return node.type + " " + node.value;
         }
@@ -81,7 +85,6 @@ var CodeGenerator = (function () {
         var beginning = "do\n";
         var body = this.handleBody(node.body);
         var ending = this.handleIndent() + "while(" + node.cond.generateCode(this) + ")";
-        this.putSemicolon = false;
         return beginning + body + ending;
     };
     CodeGenerator.prototype.handleChr = function (node) {
@@ -130,10 +133,11 @@ var CodeGenerator = (function () {
         this.putSemicolon = true;
         for (var i = 0; i < node.prog.length; i++) {
             this.putSemicolon = true;
-            code += this.handleIndent() + node.prog[i].generateCode(this) + this.semicolon();
+            code += this.handleIndent() + node.prog[i].generateCode(this);
+            code += this.semicolon();
         }
         this.indent--;
-        code += this.handleIndent() + "}";
+        code += this.handleIndent() + "}" + this.newLine();
         return code;
     };
     CodeGenerator.prototype.json_str_to_obj = function (ast) {
@@ -233,7 +237,7 @@ var CodeGenerator = (function () {
                 case "var":
                 case "num":
                 case "bool":
-                    ret = self.handleVariableOrNumOrBool(this);
+                    ret = self.handleVarOrNumOrBool(this);
                     break;
                 case "prog":
                     ret = self.handleProg(this);
@@ -266,7 +270,7 @@ function main() {
   {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}},\
   {"node" : "dowhile", "cond" : {}, "body" : {"node" : "var", "value": "x"}},\
   {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}},\
-  {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}},\
+  {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "for", "init" : {}, "cond" : {}, "after" : {}, "body" : {"node" : "var", "value": "x"}}},\
   {"node" : "while", "cond" : {"node" : "var", "value" : "a"}, "body" : {\
   "node" : "prog",\
   "prog" : [\
