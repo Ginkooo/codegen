@@ -88,21 +88,11 @@ var CodeGenerator = (function () {
         var ending = this.handleIndent() + "while(" + node.cond.generateCode(this) + ")";
         return beginning + body + ending;
     };
+    CodeGenerator.prototype.handleStr = function (node) {
+        return '"' + node.value + '"';
+    };
     CodeGenerator.prototype.handleChr = function (node) {
-        var ret = "";
-        function whichQuotes() {
-            if (node.value.length > 1)
-                return '"';
-            else
-                return "'";
-        }
-        if (node.type != null) {
-            ret += node.type + " ";
-        }
-        else {
-            ret += whichQuotes() + node.value + whichQuotes();
-        }
-        return ret;
+        return "'" + node.value + "'";
     };
     CodeGenerator.prototype.handleFunc = function (node) {
         var ret = "";
@@ -158,62 +148,8 @@ var CodeGenerator = (function () {
         return astObj;
     };
     CodeGenerator.prototype.get_ast = function () {
-        return this.ast;
+        return JSON.stringify(this.ast, null, 2);
     };
-    /*
-    *Available nodes:
-    *func:
-    *	name : string
-    *	type : type
-    *	body : prog
-    *struct:
-    *	name : string
-    *	body : prog
-    *while:
-    *	body : prog
-    *	cond : any
-    *for:
-    *	init : any
-    *	cond : any
-    *	after : any
-    *	body : prog
-    *dowhile:
-    *	body : prog
-    *	cond : any
-    *if:
-    *	cond : any
-    *	then : any
-    *	otherwise : any
-    *chr:
-    *	type : char or char[]
-    *	value : one or more character
-    *assign:
-    *	operator : =
-    *	left : any
-    *	right : any
-    *binary:
-    *	operator : + - * / % < > << >> && etc.
-    *	left : any
-    *	right : any
-    *var:
-    *	name : string
-    *	type : type
-    *	value : any
-    *num:
-    *	value : number
-    *bool:
-    *	name : string
-    *	value : boolean
-    *prog:
-    *	prog : any[]
-    *call:
-    *	name : string
-    *	args : any[]
-    *return
-    * value : any or none, if void function
-  *
-    * type - int, int[], char, char[] etc.
-    */
     CodeGenerator.prototype.generate = function () {
         var _this = this;
         Object.prototype.generateCode = function (self) {
@@ -241,6 +177,9 @@ var CodeGenerator = (function () {
                     break;
                 case "chr":
                     ret = self.handleChr(this);
+                    break;
+                case "str":
+                    ret = self.handleStr(this);
                     break;
                 case "assign":
                     ret = self.handleAssign(this);
