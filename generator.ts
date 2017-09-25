@@ -1,4 +1,4 @@
-//This interface is giving possibility to add a generateCode method to Object class
+//This interface allows to add a generateCode method to Object class
 interface Object {
   generateCode(self: CodeGenerator);
 }
